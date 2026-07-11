@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# macOS
+.DS_Store
+
+# React
+frontend/node_modules/
+frontend/dist/
+
+# Large generated datasets
+data/combined_olist_dataset.csv
+
+# Environment files
+.env
+frontend/.env
