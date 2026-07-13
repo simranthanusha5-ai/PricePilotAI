@@ -2,9 +2,9 @@ import { motion } from "framer-motion";
 import {
   Box,
   CheckCircle2,
-  Gauge,
   Scale,
   Sparkles,
+  TrendingUp,
 } from "lucide-react";
 
 function PredictionCard({ result, loading }) {
@@ -15,15 +15,15 @@ function PredictionCard({ result, loading }) {
   return (
     <motion.section
       className="dashboard-card prediction-card"
-      initial={{ opacity: 0, x: 24 }}
+      initial={{ opacity: 0, x: 30 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.55 }}
+      transition={{ duration: 0.6 }}
     >
-      <div className="section-heading">
+      <div className="section-heading prediction-heading">
         <div>
-          <span className="eyebrow">AI recommendation</span>
-          <h2>Prediction result</h2>
-          <p>Generated using the tuned XGBoost pricing model.</p>
+          <span className="eyebrow">Price recommendation</span>
+          <h2>Estimated selling price</h2>
+          <p>Calculated from the product and order details provided.</p>
         </div>
 
         <div className="model-pill">
@@ -32,63 +32,87 @@ function PredictionCard({ result, loading }) {
         </div>
       </div>
 
-      <div className="prediction-visual">
-        <div className="prediction-ring">
-          <motion.div
-            className="prediction-value"
-            key={predictedPrice}
-            initial={{ opacity: 0, scale: 0.85 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4 }}
-          >
-            <span>Recommended price</span>
+      <div className={`prediction-stage ${loading ? "is-loading" : ""}`}>
+        <div className="prediction-orbit orbit-one" />
+        <div className="prediction-orbit orbit-two" />
 
-            <strong>
-              {loading
-                ? "..."
-                : predictedPrice !== null
-                  ? `₹${Number(predictedPrice).toFixed(2)}`
-                  : "₹--"}
-            </strong>
+        <motion.div
+          className="prediction-core"
+          key={predictedPrice}
+          initial={{ opacity: 0, scale: 0.82, y: 18 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.55, ease: "easeOut" }}
+        >
+          <div className="price-icon">
+            <TrendingUp size={22} />
+          </div>
 
-            <div className="optimal-status">
-              <CheckCircle2 size={16} />
-              Optimal estimate
-            </div>
-          </motion.div>
-        </div>
+          <span className="price-label">Estimated price</span>
+
+          <strong className="price-number">
+            {loading
+              ? "Calculating..."
+              : predictedPrice !== null
+                ? `₹${Number(predictedPrice).toFixed(2)}`
+                : "₹--"}
+          </strong>
+
+          <div className="prediction-status">
+            <CheckCircle2 size={17} />
+            {loading ? "Processing prediction" : "Prediction complete"}
+          </div>
+        </motion.div>
       </div>
 
-      <div className="insight-row">
-        <article className="mini-card">
-          <div className="mini-icon blue">
-            <Box size={20} />
+      <div className="prediction-insights">
+        <motion.article
+          className="insight-tile"
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.18 }}
+        >
+          <div className="insight-tile-icon blue">
+            <Box size={21} />
           </div>
 
-          <div>
+          <div className="insight-tile-content">
             <span>Product volume</span>
-            <strong>
-              {volume !== null ? Number(volume).toFixed(0) : "--"}
-            </strong>
-            <small>cm³</small>
-          </div>
-        </article>
 
-        <article className="mini-card">
-          <div className="mini-icon green">
-            <Scale size={20} />
+            <div>
+              <strong>
+                {volume !== null ? Number(volume).toFixed(0) : "--"}
+              </strong>
+              <small>cm³</small>
+            </div>
+          </div>
+        </motion.article>
+
+        <motion.article
+          className="insight-tile"
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.28 }}
+        >
+          <div className="insight-tile-icon green">
+            <Scale size={21} />
           </div>
 
-          <div>
+          <div className="insight-tile-content">
             <span>Product density</span>
-            <strong>
-              {density !== null ? Number(density).toFixed(4) : "--"}
-            </strong>
-            <small>g/cm³</small>
-          </div>
-        </article>
 
-        
+            <div>
+              <strong>
+                {density !== null ? Number(density).toFixed(4) : "--"}
+              </strong>
+              <small>g/cm³</small>
+            </div>
+          </div>
+        </motion.article>
+      </div>
+
+      <div className="prediction-note">
+        The result is an estimate based on patterns learned from the Olist
+        e-commerce dataset.
       </div>
     </motion.section>
   );

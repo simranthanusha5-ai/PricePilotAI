@@ -1,0 +1,136 @@
+{
+  "summary": {
+    "average_price": 120.65,
+    "median_price": 74.99,
+    "total_orders": 98666,
+    "total_products": 32951
+  },
+  "price_distribution": [
+    {
+      "range": "0\u201350",
+      "count": 39317
+    },
+    {
+      "range": "51\u2013100",
+      "count": 33020
+    },
+    {
+      "range": "101\u2013200",
+      "count": 26939
+    },
+    {
+      "range": "201\u2013500",
+      "count": 10158
+    },
+    {
+      "range": "500+",
+      "count": 3216
+    }
+  ],
+  "top_categories": [
+    {
+      "category": "cama_mesa_banho",
+      "count": 11115
+    },
+    {
+      "category": "beleza_saude",
+      "count": 9670
+    },
+    {
+      "category": "esporte_lazer",
+      "count": 8641
+    },
+    {
+      "category": "moveis_decoracao",
+      "count": 8334
+    },
+    {
+      "category": "informatica_acessorios",
+      "count": 7827
+    },
+    {
+      "category": "utilidades_domesticas",
+      "count": 6964
+    },
+    {
+      "category": "relogios_presentes",
+      "count": 5991
+    },
+    {
+      "category": "telefonia",
+      "count": 4545
+    }
+  ],
+  "monthly_orders": [
+    {
+      "month": 1,
+      "orders": 8009
+    },
+    {
+      "month": 2,
+      "orders": 8427
+    },
+    {
+      "month": 3,
+      "orders": 9829
+    },
+    {
+      "month": 4,
+      "orders": 9325
+    },
+    {
+      "month": 5,
+      "orders": 10513
+    },
+    {
+      "month": 6,
+      "orders": 9377
+    },
+    {
+      "month": 7,
+      "orders": 10242
+    },
+    {
+      "month": 8,
+      "orders": 10745
+    },
+    {
+      "month": 9,
+      "orders": 4247
+    },
+    {
+      "month": 10,
+      "orders": 4876
+    },
+    {
+      "month": 11,
+      "orders": 7451
+    },
+    {
+      "month": 12,
+      "orders": 5625
+    }
+  ],
+  "delivery_distribution": [
+    {
+      "range": "0\u20135",
+      "count": 22205
+    },
+    {
+      "range": "6\u201310",
+      "count": 37633
+    },
+    {
+      "range": "11\u201315",
+      "count": 24225
+    },
+    {
+      "range": "16\u201320",
+      "count": 12163
+    },
+    {
+      "range": "20+",
+      "count": 13970
+    }
+  ]
+}
