@@ -47,6 +47,9 @@ function Navbar() {
           <BrainCircuit size={18} />
           AI Model
         </NavLink>
+        <NavLink to="/competitors">
+  Competitors
+</NavLink>
 
         <NavLink to="/about" className={linkClass}>
           <Info size={18} />

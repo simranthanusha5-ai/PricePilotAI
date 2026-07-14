@@ -7,7 +7,7 @@ import DemandForecast from "./pages/DemandForecast";
 import RevenueOptimization from "./pages/RevenueOptimization";
 import Model from "./pages/Model";
 import About from "./pages/About";
-
+import CompetitorAnalysis from "./pages/CompetitorAnalysis";
 function App() {
   return (
     <BrowserRouter>
@@ -15,6 +15,11 @@ function App() {
         <Navbar />
 
         <Routes>
+          <Route
+  path="/competitors"
+  element={<CompetitorAnalysis />}
+/>
+
           <Route path="/" element={<Home />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/forecast" element={<DemandForecast />} />

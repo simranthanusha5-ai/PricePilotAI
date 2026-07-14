@@ -5,6 +5,15 @@ import {
   Crosshair,
   TrendingUp,
 } from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 const stats = [
   {

@@ -7,22 +7,33 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from sklearn.preprocessing import LabelEncoder
 
+from competitor_analysis import CompetitorAnalysis
 from demand_forecasting import DemandForecastService
 from revenue_optimizer import RevenueOptimizer
+
 
 app = FastAPI(
     title="PricePilot AI API",
     description=(
-        "API for product price prediction, metadata, "
-        "and demand forecasting."
+        "API for product price prediction, demand forecasting, "
+        "revenue optimization, and competitor analysis."
     ),
-    version="1.1.0",
+    version="1.2.0",
 )
 
 
+# ---------------------------------------------------------
+# CORS
+# ---------------------------------------------------------
+
 cors_origins = os.getenv(
     "CORS_ORIGINS",
-    "http://localhost:5173,http://localhost:5174",
+    (
+        "http://localhost:5173,"
+        "http://localhost:5174,"
+        "http://localhost:5175,"
+        "http://localhost:5176"
+    ),
 ).split(",")
 
 app.add_middleware(
@@ -37,6 +48,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+# ---------------------------------------------------------
+# Paths
+# ---------------------------------------------------------
 
 PRICE_MODEL_PATH = os.getenv(
     "PRICE_MODEL_PATH",
@@ -54,12 +69,24 @@ PRODUCTS_DATA_PATH = os.getenv(
 )
 
 
-model = joblib.load(PRICE_MODEL_PATH)
+# ---------------------------------------------------------
+# Load models and services
+# ---------------------------------------------------------
+
+price_model = joblib.load(PRICE_MODEL_PATH)
 
 demand_service = DemandForecastService(
     DEMAND_MODEL_PATH
 )
+
 revenue_optimizer = RevenueOptimizer()
+
+competitor_service = CompetitorAnalysis()
+
+
+# ---------------------------------------------------------
+# Product categories
+# ---------------------------------------------------------
 
 products_df = pd.read_csv(PRODUCTS_DATA_PATH)
 
@@ -200,18 +227,22 @@ category_options = [
 ]
 
 
+# ---------------------------------------------------------
+# Request models
+# ---------------------------------------------------------
+
 class PriceInput(BaseModel):
-    freight_value: float
-    product_weight_g: float
-    product_length_cm: float
-    product_height_cm: float
-    product_width_cm: float
-    product_photos_qty: float
-    product_category_encoded: int
-    purchase_month: int
-    purchase_dayofweek: int
-    delivery_days: float
-    seller_encoded: int
+    freight_value: float = Field(ge=0)
+    product_weight_g: float = Field(gt=0)
+    product_length_cm: float = Field(gt=0)
+    product_height_cm: float = Field(gt=0)
+    product_width_cm: float = Field(gt=0)
+    product_photos_qty: float = Field(ge=0)
+    product_category_encoded: int = Field(ge=0)
+    purchase_month: int = Field(ge=1, le=12)
+    purchase_dayofweek: int = Field(ge=0, le=6)
+    delivery_days: float = Field(ge=0)
+    seller_encoded: int = Field(ge=0)
 
 
 class DemandForecastInput(BaseModel):
@@ -221,17 +252,34 @@ class DemandForecastInput(BaseModel):
         ge=7,
         le=365,
     )
+
+
 class RevenueOptimizationInput(BaseModel):
     current_price: float = Field(gt=0)
-    baseline_demand: float = Field(ge=0)
-    elasticity: float = Field(default=1.3, gt=0)
+    baseline_demand: float = Field(gt=0)
+    elasticity: float = Field(
+        default=1.3,
+        gt=0,
+    )
+
+
+class CompetitorAnalysisInput(BaseModel):
+    our_price: float = Field(gt=0)
+
+
+# ---------------------------------------------------------
+# General routes
+# ---------------------------------------------------------
 
 @app.get("/")
 def home():
     return {
         "message": "PricePilot AI API is running!",
         "price_model": "XGBoost",
+        "price_prediction": "Available",
         "demand_forecasting": "Available",
+        "revenue_optimization": "Available",
+        "competitor_analysis": "Available",
         "status": "Loaded successfully",
     }
 
@@ -266,6 +314,10 @@ def get_metadata():
     }
 
 
+# ---------------------------------------------------------
+# Demand forecasting routes
+# ---------------------------------------------------------
+
 @app.get("/demand/categories")
 def get_demand_categories():
     categories = [
@@ -282,7 +334,12 @@ def get_demand_categories():
 
     return {
         "categories": categories,
-        "supported_horizons": [7, 30, 90, 365],
+        "supported_horizons": [
+            7,
+            30,
+            90,
+            365,
+        ],
     }
 
 
@@ -301,8 +358,15 @@ def forecast_demand(
             detail=str(error),
         ) from error
 
+
+# ---------------------------------------------------------
+# Revenue optimization route
+# ---------------------------------------------------------
+
 @app.post("/optimize-revenue")
-def optimize_revenue(data: RevenueOptimizationInput):
+def optimize_revenue(
+    data: RevenueOptimizationInput,
+):
     try:
         return revenue_optimizer.optimize(
             current_price=data.current_price,
@@ -313,9 +377,36 @@ def optimize_revenue(data: RevenueOptimizationInput):
         raise HTTPException(
             status_code=400,
             detail=str(error),
-        ) from errorv
+        ) from error
+
+
+# ---------------------------------------------------------
+# Competitor analysis route
+# ---------------------------------------------------------
+
+@app.post("/competitor-analysis")
+def analyze_competitors(
+    data: CompetitorAnalysisInput,
+):
+    try:
+        return competitor_service.analyze(
+            our_price=data.our_price,
+        )
+    except ValueError as error:
+        raise HTTPException(
+            status_code=400,
+            detail=str(error),
+        ) from error
+
+
+# ---------------------------------------------------------
+# Price prediction route
+# ---------------------------------------------------------
+
 @app.post("/predict-price")
-def predict_price(data: PriceInput):
+def predict_price(
+    data: PriceInput,
+):
     product_volume_cm3 = (
         data.product_length_cm
         * data.product_width_cm
@@ -343,7 +434,18 @@ def predict_price(data: PriceInput):
         data.seller_encoded,
     ]]
 
-    prediction = model.predict(input_data)
+    try:
+        prediction = price_model.predict(
+            input_data
+        )
+    except Exception as error:
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Price prediction failed: "
+                f"{str(error)}"
+            ),
+        ) from error
 
     return {
         "predicted_price": round(
