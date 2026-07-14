@@ -1,5 +1,6 @@
 import { useState } from "react";
 import axios from "axios";
+import { ArrowRight, BarChart3, BrainCircuit, Server } from "lucide-react";
 
 import InputForm from "./components/InputForm";
 import PredictionCard from "./components/PredictionCard";
@@ -7,6 +8,9 @@ import StatsCards from "./components/StatsCards";
 import PriceChart from "./components/PriceChart";
 
 import "./components/Dashboard.css";
+
+const API_URL =
+  import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
 const initialForm = {
   freight_value: "20",
@@ -73,7 +77,7 @@ function Dashboard() {
       setLoading(true);
 
       const response = await axios.post(
-        "http://127.0.0.1:8000/predict-price",
+        `${API_URL}/predict-price`,
         payload
       );
 
@@ -82,11 +86,22 @@ function Dashboard() {
       console.error(requestError);
 
       setError(
-        "Prediction failed. Check that the FastAPI backend is running."
+        requestError.response?.data?.detail ||
+          requestError.message ||
+          "Prediction failed. Check that the backend is running."
       );
     } finally {
       setLoading(false);
     }
+  };
+
+  const scrollToForm = () => {
+    document
+      .getElementById("price-prediction-form")
+      ?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
   };
 
   return (
@@ -96,28 +111,82 @@ function Dashboard() {
       <div className="dashboard-glow dashboard-glow-two" />
 
       <main className="dashboard-content">
-        <section className="hero-section">
-          <div className="hero-copy">
-            <span className="eyebrow">Intelligent pricing platform</span>
+        <section className="home-hero">
+          <div className="home-hero-copy">
+            <span className="eyebrow">
+              Intelligent pricing platform
+            </span>
 
             <h1>
-              Make smarter pricing decisions with machine learning.
+              Smarter pricing.
+              <br />
+              Better revenue.
             </h1>
 
             <p>
-              Enter product, shipping, delivery and seller details to receive
-              an estimated selling price from the tuned XGBoost model.
+              Predict product prices, forecast demand, compare
+              competitors and optimize revenue from one
+              AI-powered platform.
             </p>
+
+            <div className="home-hero-actions">
+              <button
+                className="primary-action"
+                type="button"
+                onClick={scrollToForm}
+              >
+                Start prediction
+                <ArrowRight size={18} />
+              </button>
+
+              <a
+                className="secondary-action"
+                href="/analytics"
+              >
+                View analytics
+              </a>
+            </div>
           </div>
 
-          <div className="hero-summary">
-            <span>Model performance</span>
-            <strong>R² 0.703</strong>
-            <small>Tuned XGBoost regressor</small>
+          <div className="home-hero-stats">
+            <article>
+              <div className="home-stat-icon">
+                <BrainCircuit size={22} />
+              </div>
+
+              <span>Model performance</span>
+              <strong>R² 0.703</strong>
+              <small>Tuned XGBoost regressor</small>
+            </article>
+
+            <article>
+              <div className="home-stat-icon">
+                <BarChart3 size={22} />
+              </div>
+
+              <span>AI modules</span>
+              <strong>4</strong>
+              <small>
+                Pricing, demand, revenue and competitors
+              </small>
+            </article>
+
+            <article>
+              <div className="home-stat-icon">
+                <Server size={22} />
+              </div>
+
+              <span>API status</span>
+              <strong>Online</strong>
+              <small>FastAPI backend connected</small>
+            </article>
           </div>
         </section>
 
-        <section className="prediction-layout">
+        <section
+          className="prediction-layout"
+          id="price-prediction-form"
+        >
           <InputForm
             formData={formData}
             onChange={handleChange}
@@ -127,7 +196,10 @@ function Dashboard() {
             error={error}
           />
 
-          <PredictionCard result={result} loading={loading} />
+          <PredictionCard
+            result={result}
+            loading={loading}
+          />
         </section>
 
         <section className="dashboard-section">
@@ -138,8 +210,8 @@ function Dashboard() {
             </div>
 
             <p>
-              The final model was evaluated using R², mean absolute error and
-              root mean squared error.
+              Review the final model using R², mean absolute
+              error and root mean squared error.
             </p>
           </div>
 
@@ -154,8 +226,7 @@ function Dashboard() {
             </div>
 
             <p>
-              A visual summary of estimated pricing movement across the sample
-              period.
+              Explore pricing movement across the sample period.
             </p>
           </div>
 

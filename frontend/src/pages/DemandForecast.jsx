@@ -524,8 +524,8 @@ function DemandForecast() {
                     />
 
                     <XAxis
-                      dataKey="date"
-                      tickFormatter={formatCompactDate}
+                    
+                      dataKey="display_date"
                       stroke="#64748b"
                       tickLine={false}
                       axisLine={false}
@@ -541,9 +541,8 @@ function DemandForecast() {
                     />
 
                     <Tooltip
-                      labelFormatter={(value) =>
-                        formatDate(value)
-                      }
+                      labelFormatter={(value) => value}
+                      
                       formatter={(value) => [
                         `${Number(value).toFixed(2)} units`,
                         "Predicted demand",
@@ -702,8 +701,7 @@ function DemandForecast() {
               <div className="forecast-period-chip">
                 <Clock3 size={16} />
 
-                {formatDate(forecast.forecast_start)} –{" "}
-                {formatDate(forecast.forecast_end)}
+                Day 1 – Day {forecast.horizon_days}
               </div>
             </div>
 
@@ -715,7 +713,7 @@ function DemandForecast() {
 
                     {forecastPreview.map((row) => (
                       <th key={row.date}>
-                        {formatDate(row.date)}
+                        {row.display_date}
                       </th>
                     ))}
                   </tr>

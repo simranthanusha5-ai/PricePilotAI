@@ -86,7 +86,6 @@ class DemandForecastService:
             0.95,
         )
 
-        # Confidence decreases as recursive forecasts extend farther.
         horizon_decay = math.exp(-horizon / 300)
 
         confidence = np.clip(
@@ -163,13 +162,17 @@ class DemandForecastService:
                 self.model.predict(X_future)[0]
             )
 
-            predicted_demand = max(predicted_demand, 0.0)
+            predicted_demand = max(
+                predicted_demand,
+                0.0,
+            )
 
             demand_history.append(predicted_demand)
 
             forecast_rows.append(
                 {
                     "date": forecast_date.strftime("%Y-%m-%d"),
+                    "display_date": f"Day {day_number}",
                     "predicted_demand": round(
                         predicted_demand,
                         2,
@@ -206,11 +209,22 @@ class DemandForecastService:
             "horizon_days": horizon,
             "forecast_start": forecast_rows[0]["date"],
             "forecast_end": forecast_rows[-1]["date"],
-            "total_predicted_demand": round(total_demand, 2),
-            "average_daily_demand": round(forecast_average, 2),
-            "recent_daily_average": round(recent_average, 2),
+            "total_predicted_demand": round(
+                total_demand,
+                2,
+            ),
+            "average_daily_demand": round(
+                forecast_average,
+                2,
+            ),
+            "recent_daily_average": round(
+                recent_average,
+                2,
+            ),
             "trend": trend,
-            "confidence_score": self._confidence_score(horizon),
+            "confidence_score": self._confidence_score(
+                horizon
+            ),
             "validation_metrics": {
                 key: round(float(value), 4)
                 for key, value in self.metrics.items()
