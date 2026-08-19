@@ -56,7 +56,8 @@ cors_origins = os.getenv(
         "http://localhost:5173,"
         "http://localhost:5174,"
         "http://localhost:5175,"
-        "http://localhost:5176"
+        "http://localhost:5176,"
+        "https://price-pilot-k9dmd440v-techno21.vercel.app"
     ),
 ).split(",")
 
