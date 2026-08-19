@@ -27,7 +27,7 @@ password_context = CryptContext(
 
 
 def hash_password(password: str) -> str:
-    return password_context.hash(password)
+    return password_context.hash(password[:72])
 
 
 def verify_password(
