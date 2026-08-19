@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 const API_URL =
   import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
+console.log("PRICEPILOT API:", API_URL);
 function Register() {
   const navigate = useNavigate();
 
