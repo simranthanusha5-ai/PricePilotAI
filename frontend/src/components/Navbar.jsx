@@ -3,12 +3,28 @@ import {
   BrainCircuit,
   Home,
   Info,
+  History,
   LineChart,
+  LogOut,
+  Package,
   Sparkles,
+  User,
 } from "lucide-react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 
 function Navbar() {
+  const navigate = useNavigate();
+
+  const user = JSON.parse(
+    localStorage.getItem("pricepilot_user") || "null"
+  );
+
+  const handleLogout = () => {
+    localStorage.removeItem("pricepilot_token");
+    localStorage.removeItem("pricepilot_user");
+    navigate("/login");
+  };
+
   const linkClass = ({ isActive }) =>
     `nav-item ${isActive ? "active" : ""}`;
 
@@ -47,8 +63,21 @@ function Navbar() {
           <BrainCircuit size={18} />
           AI Model
         </NavLink>
-        <NavLink to="/competitors">
-  Competitors
+        <NavLink to="/revenue" className={linkClass}>
+  Revenue
+</NavLink>
+
+        <NavLink to="/competitors" className={linkClass}>
+          Competitors
+        </NavLink>
+
+        <NavLink to="/products" className={linkClass}>
+          <Package size={18} />
+          Products
+        </NavLink>
+        <NavLink to="/history" className={linkClass}>
+  <History size={18} />
+  History
 </NavLink>
 
         <NavLink to="/about" className={linkClass}>
@@ -56,6 +85,24 @@ function Navbar() {
           About
         </NavLink>
       </nav>
+
+      <div className="navbar-user">
+        {user && (
+          <div className="navbar-user-name">
+            <User size={18} />
+            {user.name}
+          </div>
+        )}
+
+        <button
+          className="navbar-logout"
+          type="button"
+          onClick={handleLogout}
+        >
+          <LogOut size={16} />
+          Logout
+        </button>
+      </div>
     </header>
   );
 }

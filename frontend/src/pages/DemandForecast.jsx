@@ -77,7 +77,8 @@ function DemandForecast() {
   const [horizon, setHorizon] = useState(30);
   const [forecast, setForecast] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [loadingCategories, setLoadingCategories] = useState(true);
+  const [loadingCategories, setLoadingCategories] =
+    useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -220,6 +221,62 @@ function DemandForecast() {
     ];
   }, [forecast, confidenceLevel]);
 
+  async function saveForecastHistory(
+    forecastData,
+    categoryLabel
+  ) {
+    const token = localStorage.getItem(
+      "pricepilot_token"
+    );
+
+    if (!token) {
+      console.warn(
+        "Forecast history was not saved because no authentication token was found."
+      );
+      return;
+    }
+
+    try {
+      const historyResponse = await fetch(
+        `${API_URL}/history`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            module: "demand_forecast",
+            product_name: categoryLabel,
+            input_data: {
+              category,
+              category_label: categoryLabel,
+              horizon_days: Number(horizon),
+            },
+            result_data: forecastData,
+          }),
+        }
+      );
+
+      if (!historyResponse.ok) {
+        const historyError = await historyResponse
+          .json()
+          .catch(() => ({}));
+
+        console.warn(
+          "Forecast generated, but history saving failed:",
+          historyError.detail ||
+            historyResponse.statusText
+        );
+      }
+    } catch (historyError) {
+      console.warn(
+        "Forecast generated, but history saving failed:",
+        historyError
+      );
+    }
+  }
+
   async function generateForecast(event) {
     event.preventDefault();
 
@@ -254,7 +311,19 @@ function DemandForecast() {
         );
       }
 
+      const categoryLabel =
+        categories.find(
+          (item) => item.value === category
+        )?.label ||
+        category ||
+        "Selected category";
+
       setForecast(data);
+
+      await saveForecastHistory(
+        data,
+        categoryLabel
+      );
     } catch (requestError) {
       console.error(requestError);
 
@@ -271,7 +340,9 @@ function DemandForecast() {
     <main className="dashboard-content forecast-page">
       <section className="forecast-topbar">
         <div>
-          <span className="eyebrow">Demand intelligence</span>
+          <span className="eyebrow">
+            Demand intelligence
+          </span>
 
           <h1>Demand Forecasting</h1>
 
@@ -326,7 +397,9 @@ function DemandForecast() {
               <select
                 value={horizon}
                 onChange={(event) =>
-                  setHorizon(Number(event.target.value))
+                  setHorizon(
+                    Number(event.target.value)
+                  )
                 }
               >
                 {HORIZONS.map((option) => (
@@ -345,7 +418,9 @@ function DemandForecast() {
             className="forecast-generate-button"
             type="submit"
             disabled={
-              loading || loadingCategories || !category
+              loading ||
+              loadingCategories ||
+              !category
             }
           >
             <Sparkles size={18} />
@@ -358,7 +433,9 @@ function DemandForecast() {
       </section>
 
       {error && (
-        <div className="forecast-error">{error}</div>
+        <div className="forecast-error">
+          {error}
+        </div>
       )}
 
       {!forecast ? (
@@ -415,7 +492,9 @@ function DemandForecast() {
 
               <div>
                 <strong>{trendLabel}</strong>
-                <span>Compared with recent demand</span>
+                <span>
+                  Compared with recent demand
+                </span>
               </div>
             </div>
           </motion.section>
@@ -436,8 +515,14 @@ function DemandForecast() {
                 <motion.article
                   className="forecast-kpi-card"
                   key={label}
-                  initial={{ opacity: 0, y: 18 }}
-                  animate={{ opacity: 1, y: 0 }}
+                  initial={{
+                    opacity: 0,
+                    y: 18,
+                  }}
+                  animate={{
+                    opacity: 1,
+                    y: 0,
+                  }}
                   transition={{
                     delay: index * 0.07,
                   }}
@@ -452,7 +537,10 @@ function DemandForecast() {
 
                   <div className="forecast-kpi-value">
                     <strong>{value}</strong>
-                    {suffix && <small>{suffix}</small>}
+
+                    {suffix && (
+                      <small>{suffix}</small>
+                    )}
                   </div>
 
                   <p>{description}</p>
@@ -464,14 +552,21 @@ function DemandForecast() {
           <section className="forecast-analysis-grid">
             <motion.article
               className="dashboard-card forecast-chart-panel"
-              initial={{ opacity: 0, x: -18 }}
-              animate={{ opacity: 1, x: 0 }}
+              initial={{
+                opacity: 0,
+                x: -18,
+              }}
+              animate={{
+                opacity: 1,
+                x: 0,
+              }}
             >
               <div className="forecast-panel-heading">
                 <div>
                   <span className="eyebrow">
                     Daily projection
                   </span>
+
                   <h2>Demand forecast</h2>
                 </div>
 
@@ -524,7 +619,6 @@ function DemandForecast() {
                     />
 
                     <XAxis
-                    
                       dataKey="display_date"
                       stroke="#64748b"
                       tickLine={false}
@@ -541,10 +635,13 @@ function DemandForecast() {
                     />
 
                     <Tooltip
-                      labelFormatter={(value) => value}
-                      
+                      labelFormatter={(value) =>
+                        value
+                      }
                       formatter={(value) => [
-                        `${Number(value).toFixed(2)} units`,
+                        `${Number(
+                          value
+                        ).toFixed(2)} units`,
                         "Predicted demand",
                       ]}
                       contentStyle={{
@@ -578,14 +675,21 @@ function DemandForecast() {
 
             <motion.aside
               className="dashboard-card forecast-insights-panel"
-              initial={{ opacity: 0, x: 18 }}
-              animate={{ opacity: 1, x: 0 }}
+              initial={{
+                opacity: 0,
+                x: 18,
+              }}
+              animate={{
+                opacity: 1,
+                x: 0,
+              }}
             >
               <div className="forecast-panel-heading">
                 <div>
                   <span className="eyebrow">
                     Forecast intelligence
                   </span>
+
                   <h2>Forecast insights</h2>
                 </div>
 
@@ -606,8 +710,9 @@ function DemandForecast() {
 
                     <p>
                       Demand is expected to be{" "}
-                      <b>{forecast.trend}</b> compared with
-                      the recent 28-day average.
+                      <b>{forecast.trend}</b>{" "}
+                      compared with the recent 28-day
+                      average.
                     </p>
                   </div>
                 </article>
@@ -616,13 +721,17 @@ function DemandForecast() {
                   <CalendarDays size={22} />
 
                   <div>
-                    <strong>Forecast horizon</strong>
+                    <strong>
+                      Forecast horizon
+                    </strong>
 
                     <p>
                       This projection covers{" "}
-                      <b>{forecast.horizon_days} days</b>.
-                      Shorter horizons generally provide more
-                      reliable forecasts.
+                      <b>
+                        {forecast.horizon_days} days
+                      </b>
+                      . Shorter horizons generally provide
+                      more reliable forecasts.
                     </p>
                   </div>
                 </article>
@@ -631,11 +740,16 @@ function DemandForecast() {
                   <Gauge size={22} />
 
                   <div>
-                    <strong>Model confidence</strong>
+                    <strong>
+                      Model confidence
+                    </strong>
 
                     <p>
                       Confidence is{" "}
-                      <b>{confidenceLevel.toLowerCase()}</b> at{" "}
+                      <b>
+                        {confidenceLevel.toLowerCase()}
+                      </b>{" "}
+                      at{" "}
                       {Number(
                         forecast.confidence_score
                       ).toFixed(1)}
@@ -658,7 +772,8 @@ function DemandForecast() {
                   WAPE{" "}
                   <strong>
                     {Number(
-                      forecast.validation_metrics?.wape
+                      forecast.validation_metrics
+                        ?.wape
                     ).toFixed(3)}
                   </strong>
 
@@ -667,7 +782,8 @@ function DemandForecast() {
                   MAE{" "}
                   <strong>
                     {Number(
-                      forecast.validation_metrics?.mae
+                      forecast.validation_metrics
+                        ?.mae
                     ).toFixed(3)}
                   </strong>
 
@@ -676,7 +792,8 @@ function DemandForecast() {
                   RMSE{" "}
                   <strong>
                     {Number(
-                      forecast.validation_metrics?.rmse
+                      forecast.validation_metrics
+                        ?.rmse
                     ).toFixed(3)}
                   </strong>
                 </p>
@@ -686,8 +803,14 @@ function DemandForecast() {
 
           <motion.section
             className="dashboard-card forecast-table-panel"
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{
+              opacity: 0,
+              y: 18,
+            }}
+            animate={{
+              opacity: 1,
+              y: 0,
+            }}
           >
             <div className="forecast-panel-heading">
               <div>
@@ -701,7 +824,8 @@ function DemandForecast() {
               <div className="forecast-period-chip">
                 <Clock3 size={16} />
 
-                Day 1 – Day {forecast.horizon_days}
+                Day 1 – Day{" "}
+                {forecast.horizon_days}
               </div>
             </div>
 
@@ -711,11 +835,13 @@ function DemandForecast() {
                   <tr>
                     <th>Date</th>
 
-                    {forecastPreview.map((row) => (
-                      <th key={row.date}>
-                        {row.display_date}
-                      </th>
-                    ))}
+                    {forecastPreview.map(
+                      (row) => (
+                        <th key={row.date}>
+                          {row.display_date}
+                        </th>
+                      )
+                    )}
                   </tr>
                 </thead>
 
@@ -723,13 +849,15 @@ function DemandForecast() {
                   <tr>
                     <th>Predicted demand</th>
 
-                    {forecastPreview.map((row) => (
-                      <td key={row.date}>
-                        {Number(
-                          row.predicted_demand
-                        ).toFixed(2)}
-                      </td>
-                    ))}
+                    {forecastPreview.map(
+                      (row) => (
+                        <td key={row.date}>
+                          {Number(
+                            row.predicted_demand
+                          ).toFixed(2)}
+                        </td>
+                      )
+                    )}
                   </tr>
                 </tbody>
               </table>

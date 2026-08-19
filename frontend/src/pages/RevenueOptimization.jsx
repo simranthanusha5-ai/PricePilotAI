@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
+import "../components/Dashboard.css";
 import {
   ArrowDownRight,
   ArrowRight,
@@ -45,6 +46,41 @@ function RevenueOptimization() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const saveHistory = async (optimizationResult) => {
+  const token = localStorage.getItem("pricepilot_token");
+
+  if (!token) {
+    console.warn("No authentication token found.");
+    return;
+  }
+
+  try {
+    await fetch(`${API_URL}/history`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        module: "revenue_optimization",
+
+        product_name: "Revenue Optimization",
+
+        input_data: {
+          current_price: Number(currentPrice),
+          baseline_demand: Number(baselineDemand),
+          elasticity: Number(elasticity),
+        },
+
+        result_data: optimizationResult,
+      }),
+    });
+
+    console.log("Revenue history saved.");
+  } catch (error) {
+    console.error(error);
+  }
+};
 
   const recommendationLabel = useMemo(() => {
     if (!result) {
@@ -137,6 +173,7 @@ function RevenueOptimization() {
       }
 
       setResult(data);
+      await saveHistory(data);
     } catch (requestError) {
       console.error(requestError);
       setError(

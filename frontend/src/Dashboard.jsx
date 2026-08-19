@@ -111,6 +111,8 @@ function Dashboard() {
       <div className="dashboard-glow dashboard-glow-two" />
 
       <main className="dashboard-content">
+      
+
         <section className="home-hero">
           <div className="home-hero-copy">
             <span className="eyebrow">

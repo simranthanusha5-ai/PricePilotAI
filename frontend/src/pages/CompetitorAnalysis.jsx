@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import axios from "axios";
 import {
   Bar,
@@ -12,11 +12,17 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import {
+  ArrowDownRight,
+  ArrowUpRight,
+  BadgeIndianRupee,
+  Lightbulb,
+  Minus,
+  Target,
+} from "lucide-react";
 
 import "../components/Dashboard.css";
-<h1 style={{ color: "red", fontSize: "70px" }}>
-  TEST PAGE
-</h1>
+
 const API_URL =
   import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
@@ -28,11 +34,57 @@ const CHART_COLORS = [
   "#F59E0B",
 ];
 
+function formatCurrency(value) {
+  return `₹${Number(value).toFixed(2)}`;
+}
+
+function getPriceDifference(price, ourPrice) {
+  return Number(price) - Number(ourPrice);
+}
+
 function CompetitorAnalysis() {
   const [price, setPrice] = useState("");
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const saveHistory = async (analysis) => {
+  const token = localStorage.getItem("pricepilot_token");
+
+  if (!token) {
+    console.warn("No authentication token found.");
+    return;
+  }
+
+  try {
+    await axios.post(
+      `${API_URL}/history`,
+      {
+        module: "competitor_analysis",
+        product_name: "Market Price Analysis",
+
+        input_data: {
+          our_price: Number(analysis.our_price),
+        },
+
+        result_data: analysis,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    console.log("History saved successfully.");
+  } catch (error) {
+    console.error(
+      "History save failed:",
+      error.response?.data || error.message
+    );
+  }
+};
+  
 
   const analyze = async () => {
     const numericPrice = Number(price);
@@ -54,6 +106,7 @@ function CompetitorAnalysis() {
       );
 
       setResult(response.data);
+      await saveHistory(response.data);
     } catch (requestError) {
       console.error(
         "Competitor analysis failed:",
@@ -70,20 +123,50 @@ function CompetitorAnalysis() {
     }
   };
 
-  const chartData = result
-    ? [
-        {
-          company: "Our Price",
-          price: Number(result.our_price),
-        },
-        ...Object.entries(result.competitors).map(
-          ([company, value]) => ({
-            company,
-            price: Number(value),
-          })
-        ),
-      ]
-    : [];
+  const chartData = useMemo(() => {
+    if (!result) {
+      return [];
+    }
+
+    return [
+      {
+        company: "Our Price",
+        price: Number(result.our_price),
+        difference: 0,
+      },
+      ...Object.entries(result.competitors).map(
+        ([company, value]) => ({
+          company,
+          price: Number(value),
+          difference: getPriceDifference(
+            value,
+            result.our_price
+          ),
+        })
+      ),
+    ];
+  }, [result]);
+
+  const competitorAverage = useMemo(() => {
+    if (!result) {
+      return 0;
+    }
+
+    const values = Object.values(
+      result.competitors
+    ).map(Number);
+
+    if (values.length === 0) {
+      return 0;
+    }
+
+    return (
+      values.reduce(
+        (total, value) => total + value,
+        0
+      ) / values.length
+    );
+  }, [result]);
 
   const differencePercent = result
     ? Number(result.difference_percent)
@@ -97,8 +180,56 @@ function CompetitorAnalysis() {
         : "equal to";
 
   const positionClass = result
-    ? result.market_position.toLowerCase()
+    ? String(result.market_position).toLowerCase()
     : "";
+
+  const getDifferenceLabel = (
+    competitorPrice
+  ) => {
+    if (!result) {
+      return "";
+    }
+
+    const difference = getPriceDifference(
+      competitorPrice,
+      result.our_price
+    );
+
+    if (difference > 0) {
+      return `+${formatCurrency(difference)}`;
+    }
+
+    if (difference < 0) {
+      return `-${formatCurrency(
+        Math.abs(difference)
+      )}`;
+    }
+
+    return "Same price";
+  };
+
+  const getDifferenceIcon = (
+    competitorPrice
+  ) => {
+    if (!result) {
+      return <Minus size={16} />;
+    }
+
+    const difference = getPriceDifference(
+      competitorPrice,
+      result.our_price
+    );
+
+    if (difference > 0) {
+      return <ArrowUpRight size={16} />;
+    }
+
+    if (difference < 0) {
+      return <ArrowDownRight size={16} />;
+    }
+
+    return <Minus size={16} />;
+  };
 
   return (
     <main className="dashboard-content">
@@ -108,7 +239,7 @@ function CompetitorAnalysis() {
             Market intelligence
           </span>
 
-          <h1>Competitor Analysis FIXED</h1>
+          <h1>Competitor Analysis</h1>
 
           <p>
             Compare your product price with simulated competitor
@@ -120,10 +251,14 @@ function CompetitorAnalysis() {
       <section className="dashboard-card">
         <div className="section-heading">
           <div>
+            <span className="eyebrow">
+              Price input
+            </span>
+
             <h2>Analyze market position</h2>
 
             <p>
-              Enter your product price to generate a simulated
+              Enter your selling price to generate a simulated
               competitor comparison.
             </p>
           </div>
@@ -180,20 +315,22 @@ function CompetitorAnalysis() {
               <span>Our Price</span>
 
               <strong>
-                ₹{Number(result.our_price).toFixed(2)}
+                {formatCurrency(result.our_price)}
               </strong>
 
               <small>Current selling price</small>
             </article>
 
             <article className="stat-card">
-              <span>Market Average</span>
+              <span>Competitor Average</span>
 
               <strong>
-                ₹{Number(result.market_average).toFixed(2)}
+                {formatCurrency(competitorAverage)}
               </strong>
 
-              <small>Simulated competitor average</small>
+              <small>
+                Average across simulated competitors
+              </small>
             </article>
 
             <article className="stat-card">
@@ -213,10 +350,15 @@ function CompetitorAnalysis() {
               <span>Opportunity Score</span>
 
               <strong>
-                {Number(result.opportunity_score).toFixed(1)}%
+                {Number(
+                  result.opportunity_score
+                ).toFixed(1)}
+                %
               </strong>
 
-              <small>Pricing competitiveness score</small>
+              <small>
+                Pricing competitiveness score
+              </small>
             </article>
           </section>
 
@@ -227,12 +369,16 @@ function CompetitorAnalysis() {
                   AI recommendation
                 </span>
 
-                <h2>{result.recommendation}</h2>
+                <h2>
+                  {result.recommendation}
+                </h2>
 
                 <p>
                   Your price is{" "}
-                  {Math.abs(differencePercent).toFixed(2)}%{" "}
-                  {differenceDirection} the simulated market
+                  {Math.abs(
+                    differencePercent
+                  ).toFixed(2)}
+                  % {differenceDirection} the simulated market
                   average.
                 </p>
               </div>
@@ -240,8 +386,24 @@ function CompetitorAnalysis() {
               <div
                 className={`market-position-badge ${positionClass}`}
               >
+                <Target size={17} />
                 {result.market_position}
               </div>
+            </div>
+
+            <div className="competitor-insight-strip">
+              <Lightbulb size={20} />
+
+              <p>
+                The simulated competitor average is{" "}
+                <strong>
+                  {formatCurrency(
+                    competitorAverage
+                  )}
+                </strong>
+                . Use this range as guidance when testing price
+                changes.
+              </p>
             </div>
           </section>
 
@@ -264,37 +426,50 @@ function CompetitorAnalysis() {
             <div className="stats-grid">
               {Object.entries(
                 result.competitors
-              ).map(([company, value]) => (
-                <article
-                  className="stat-card"
-                  key={company}
-                >
-                  <span>{company}</span>
+              ).map(([company, value]) => {
+                const numericValue =
+                  Number(value);
 
-                  <strong>
-                    ₹{Number(value).toFixed(2)}
-                  </strong>
+                const difference =
+                  getPriceDifference(
+                    numericValue,
+                    result.our_price
+                  );
 
-                  <small>
-                    {Number(value) > Number(result.our_price)
-                      ? `${(
-                          ((Number(value) -
-                            Number(result.our_price)) /
-                            Number(result.our_price)) *
-                          100
-                        ).toFixed(2)}% higher`
-                      : Number(value) <
-                          Number(result.our_price)
-                        ? `${(
-                            ((Number(result.our_price) -
-                              Number(value)) /
-                              Number(result.our_price)) *
-                            100
-                          ).toFixed(2)}% lower`
-                        : "Same price"}
-                  </small>
-                </article>
-              ))}
+                const differenceClass =
+                  difference > 0
+                    ? "higher"
+                    : difference < 0
+                      ? "lower"
+                      : "equal";
+
+                return (
+                  <article
+                    className="stat-card"
+                    key={company}
+                  >
+                    <span>{company}</span>
+
+                    <strong>
+                      {formatCurrency(
+                        numericValue
+                      )}
+                    </strong>
+
+                    <small
+                      className={`competitor-difference ${differenceClass}`}
+                    >
+                      {getDifferenceIcon(
+                        numericValue
+                      )}
+
+                      {getDifferenceLabel(
+                        numericValue
+                      )}
+                    </small>
+                  </article>
+                );
+              })}
             </div>
           </section>
 
@@ -312,6 +487,22 @@ function CompetitorAnalysis() {
                   simulated competitor prices.
                 </p>
               </div>
+
+              <div className="competitor-average-summary">
+                <BadgeIndianRupee size={20} />
+
+                <div>
+                  <span>
+                    Competitor average
+                  </span>
+
+                  <strong>
+                    {formatCurrency(
+                      competitorAverage
+                    )}
+                  </strong>
+                </div>
+              </div>
             </div>
 
             <div className="competitor-chart-wrapper">
@@ -322,11 +513,12 @@ function CompetitorAnalysis() {
                 <BarChart
                   data={chartData}
                   margin={{
-                    top: 42,
-                    right: 24,
-                    left: 8,
+                    top: 34,
+                    right: 56,
+                    left: 18,
                     bottom: 18,
                   }}
+                  barCategoryGap="24%"
                 >
                   <CartesianGrid
                     strokeDasharray="4 4"
@@ -338,6 +530,7 @@ function CompetitorAnalysis() {
                     dataKey="company"
                     axisLine={false}
                     tickLine={false}
+                    interval={0}
                     tick={{
                       fill: "#93a4c3",
                       fontSize: 13,
@@ -348,26 +541,24 @@ function CompetitorAnalysis() {
                     axisLine={false}
                     tickLine={false}
                     domain={[
-                      (dataMin) =>
-                        Math.max(
-                          0,
-                          Math.floor(dataMin - 10)
-                        ),
-                      (dataMax) =>
-                        Math.ceil(dataMax + 10),
-                    ]}
+  (dataMin) => Math.floor(dataMin * 0.95),
+  (dataMax) => Math.ceil(dataMax * 1.05),
+]}
                     tick={{
                       fill: "#93a4c3",
                       fontSize: 13,
                     }}
                     tickFormatter={(value) =>
-                      `₹${Number(value).toFixed(0)}`
+                      `₹${Number(
+                        value
+                      ).toFixed(0)}`
                     }
                   />
 
                   <Tooltip
                     cursor={{
-                      fill: "rgba(99, 102, 241, 0.08)",
+                      fill:
+                        "rgba(99, 102, 241, 0.08)",
                     }}
                     contentStyle={{
                       background: "#111827",
@@ -386,18 +577,47 @@ function CompetitorAnalysis() {
                       color: "#60a5fa",
                       fontWeight: 700,
                     }}
-                    formatter={(value) => [
-                      `₹${Number(value).toFixed(2)}`,
-                      "Price",
-                    ]}
+                    formatter={(
+                      value,
+                      name,
+                      item
+                    ) => {
+                      const difference =
+                        Number(
+                          item?.payload
+                            ?.difference || 0
+                        );
+
+                      const label =
+                        difference > 0
+                          ? `Price · +${formatCurrency(
+                              difference
+                            )}`
+                          : difference < 0
+                            ? `Price · -${formatCurrency(
+                                Math.abs(
+                                  difference
+                                )
+                              )}`
+                            : "Price";
+
+                      return [
+                        formatCurrency(
+                          value
+                        ),
+                        label,
+                      ];
+                    }}
                   />
 
                   <ReferenceLine
-  y={Number(result.market_average)}
-  stroke="#ef4444"
-  strokeDasharray="6 6"
-  strokeWidth={2}
-/>
+                    y={Number(
+                      result.market_average
+                    )}
+                    stroke="#ef4444"
+                    strokeDasharray="6 6"
+                    strokeWidth={2}
+                  />
 
                   <Bar
                     dataKey="price"
@@ -405,22 +625,27 @@ function CompetitorAnalysis() {
                     maxBarSize={84}
                     animationDuration={1200}
                   >
-                    {chartData.map((entry, index) => (
-                      <Cell
-                        key={entry.company}
-                        fill={
-                          CHART_COLORS[
-                            index % CHART_COLORS.length
-                          ]
-                        }
-                      />
-                    ))}
+                    {chartData.map(
+                      (entry, index) => (
+                        <Cell
+                          key={
+                            entry.company
+                          }
+                          fill={
+                            CHART_COLORS[
+                              index %
+                                CHART_COLORS.length
+                            ]
+                          }
+                        />
+                      )
+                    )}
 
                     <LabelList
                       dataKey="price"
                       position="top"
                       formatter={(value) =>
-                        `₹${Number(value).toFixed(2)}`
+                        formatCurrency(value)
                       }
                       fill="#dbeafe"
                       fontSize={12}
@@ -429,15 +654,17 @@ function CompetitorAnalysis() {
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
-</div>
+            </div>
 
-<div className="market-average-note">
-  <span className="market-average-line" />
-  Market average: ₹
-  {Number(result.market_average).toFixed(2)}
-</div>
+            <div className="market-average-note">
+              <span className="market-average-line" />
 
-</section>
+              Market average:{" "}
+              {formatCurrency(
+                result.market_average
+              )}
+            </div>
+          </section>
         </>
       )}
     </main>

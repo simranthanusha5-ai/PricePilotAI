@@ -17,3 +17,9 @@ data/combined_olist_dataset.csv
 # Environment files
 .env
 frontend/.env
+# Local database
+pricepilot.db
+
+# CatBoost generated files
+catboost_info/
+

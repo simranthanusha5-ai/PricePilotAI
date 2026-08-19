@@ -7,19 +7,43 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from sklearn.preprocessing import LabelEncoder
 
+import models
 from competitor_analysis import CompetitorAnalysis
+from database import Base, engine
 from demand_forecasting import DemandForecastService
 from revenue_optimizer import RevenueOptimizer
+from routes_auth import router as auth_router
+from routes_products import router as products_router
+from routes_history import router as history_router
 
+# ---------------------------------------------------------
+# FastAPI application
+# ---------------------------------------------------------
 
 app = FastAPI(
     title="PricePilot AI API",
     description=(
-        "API for product price prediction, demand forecasting, "
-        "revenue optimization, and competitor analysis."
+        "API for authentication, product management, price prediction, "
+        "demand forecasting, revenue optimization, and competitor analysis."
     ),
-    version="1.2.0",
+    version="1.3.0",
 )
+
+
+# ---------------------------------------------------------
+# Database setup
+# ---------------------------------------------------------
+
+Base.metadata.create_all(bind=engine)
+
+
+# ---------------------------------------------------------
+# Routers
+# ---------------------------------------------------------
+
+app.include_router(auth_router)
+app.include_router(products_router)
+app.include_router(history_router)
 
 
 # ---------------------------------------------------------
@@ -50,7 +74,7 @@ app.add_middleware(
 
 
 # ---------------------------------------------------------
-# Paths
+# File paths
 # ---------------------------------------------------------
 
 PRICE_MODEL_PATH = os.getenv(
@@ -85,7 +109,7 @@ competitor_service = CompetitorAnalysis()
 
 
 # ---------------------------------------------------------
-# Product categories
+# Product metadata
 # ---------------------------------------------------------
 
 products_df = pd.read_csv(PRODUCTS_DATA_PATH)
@@ -228,7 +252,7 @@ category_options = [
 
 
 # ---------------------------------------------------------
-# Request models
+# Request schemas
 # ---------------------------------------------------------
 
 class PriceInput(BaseModel):
@@ -275,7 +299,10 @@ class CompetitorAnalysisInput(BaseModel):
 def home():
     return {
         "message": "PricePilot AI API is running!",
-        "price_model": "XGBoost",
+        "version": "1.3.0",
+        "database": "Available",
+        "authentication": "Available",
+        "product_management": "Available",
         "price_prediction": "Available",
         "demand_forecasting": "Available",
         "revenue_optimization": "Available",
